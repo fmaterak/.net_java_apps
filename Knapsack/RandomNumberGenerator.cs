@@ -8,6 +8,11 @@ namespace Knapsack
     {
         private long seed;
 
+		public RandomNumberGenerator()
+		{
+			seed = DateTimeOffset.Now.ToUnixTimeSeconds();
+		}
+
         public RandomNumberGenerator(long seedValue)
         {
             seed = seedValue;
