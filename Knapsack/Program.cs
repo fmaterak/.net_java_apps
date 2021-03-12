@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 
@@ -27,15 +28,19 @@ namespace Knapsack
 
         static List<Item> RandomizeItems(int numItems, long? rng_seed = null)
         {
-            List<Item> items = new List<Item>();
             RandomNumberGenerator rng = new RandomNumberGenerator(rng_seed);
 
-            for (int i = 0; i < numItems; i++)
-            {
-                items.Add(new Item(rng.nextInt(1, 29), rng.nextInt(1, 29)));
-            }
+            return Enumerable.Range(0, numItems)
+                .Select(i => new Item(rng.nextInt(1, 29), rng.nextInt(1, 29)))
+                .ToList();
+        }
 
-            return items;
+        static List<Item> GetKnapsackContents(long capacity, IEnumerable<Item> items)
+        {
+            return items
+                .OrderBy(item => item.Value / item.Weight)
+                .TakeWhile(item => (capacity -= item.Weight) >= 0)
+                .ToList();
         }
     }
 }
