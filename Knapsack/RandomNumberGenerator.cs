@@ -8,37 +8,32 @@ namespace Knapsack
     {
         private long seed;
 
-		public RandomNumberGenerator()
-		{
-			seed = DateTimeOffset.Now.ToUnixTimeSeconds();
-		}
-
-        public RandomNumberGenerator(long seedValue)
+        public RandomNumberGenerator(long? seedValue = null)
         {
-            seed = seedValue;
+            seed = seedValue.HasValue ? seedValue.Value : DateTimeOffset.Now.ToUnixTimeSeconds();
         }
 
-		public int nextInt(int low, int high)
-		{
-			long k;
-			double value_0_1;
-			long m = 2147483647L, a = 16807L, b = 127773L, c = 2836L;
+        public int nextInt(int low, int high)
+        {
+            long k;
+            double value_0_1;
+            long m = 2147483647L, a = 16807L, b = 127773L, c = 2836L;
 
-			k = seed / b;
-			seed = a * (seed % b) - k * c;
-			if (seed < 0)
-				seed = seed + m;
-			value_0_1 = seed;
-			value_0_1 /= m;
-			return low + (int)Math.Floor(value_0_1 * (high - low + 1));
-		}
-		public float nextFloat(int low, int high)
-		{
-			low *= 100000;
-			high *= 100000;
-			float val = nextInt(low, high) / 100000.0F;
-			return val;
-		}
+            k = seed / b;
+            seed = a * (seed % b) - k * c;
+            if (seed < 0)
+                seed = seed + m;
+            value_0_1 = seed;
+            value_0_1 /= m;
+            return low + (int)Math.Floor(value_0_1 * (high - low + 1));
+        }
+        public float nextFloat(int low, int high)
+        {
+            low *= 100000;
+            high *= 100000;
+            float val = nextInt(low, high) / 100000.0F;
+            return val;
+        }
 
-	}
+    }
 }
