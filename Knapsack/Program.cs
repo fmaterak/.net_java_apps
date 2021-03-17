@@ -110,7 +110,7 @@ namespace Knapsack
             return true;
         }
 
-        static List<Item> RandomizeItems(int numItems, long rng_seed)
+        public static List<Item> RandomizeItems(int numItems, long rng_seed)
         {
             var rng = new RandomNumberGenerator(rng_seed);
 
@@ -119,7 +119,7 @@ namespace Knapsack
                 .ToList();
         }
 
-        static List<Item> GetKnapsackContents(int capacity, IEnumerable<Item> items)
+        public static List<Item> GetKnapsackContents(int capacity, IEnumerable<Item> items)
         {
             bool ItemShouldBeAdded(Item item) {
                 if (item.Weight <= capacity) {
