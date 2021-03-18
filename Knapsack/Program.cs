@@ -17,6 +17,22 @@ namespace Knapsack
             Weight = weight;
             Value = value;
         }
+
+        public override String ToString()
+        {
+            return String.Format("Item(W={0}, V={1})", Weight, Value);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            Item other = (Item) obj;
+            return Weight == other.Weight && Value == other.Value;
+        }
     }
 
     public class Program

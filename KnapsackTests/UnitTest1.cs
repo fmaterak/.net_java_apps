@@ -17,28 +17,27 @@ namespace KnapsackTests
         public void TestOneElement()
         {
             Item test_item = new(49, 1);
-            IEnumerable<Item> test_items = new Item[] { test_item };
+            var test_items = new Item[] { test_item };
             Assert.IsNotEmpty(Program.GetKnapsackContents(50, test_items));
         }
         [Test]
         public void TestIncorrectElement()
         {
             Item test_item = new(51, 1);
-            IEnumerable<Item> test_items = new Item[] { test_item };
+            var test_items = new Item[] { test_item };
             Assert.IsEmpty(Program.GetKnapsackContents(50, test_items));
         }
         [Test]
         public void TestFixedSeed()
         {
-            int fixed_seed = 1615992303;
+            long fixed_seed = 1615992303;
             var test_items = Program.RandomizeItems(10, fixed_seed);
-            var content = Program.GetKnapsackContents(50, test_items);
-            Item[] test_content = content.ToArray();
-            Item fixed_item1 = new(23, 28);
-            Item fixed_item2 = new(9, 15);
-            Item fixed_item3 = new(11, 15);
-            var expected_content = new Item[] { fixed_item1, fixed_item2, fixed_item3 };
-            Assert.AreEqual(expected_content, test_content);
+            var test_content = Program.GetKnapsackContents(50, test_items);
+            var expected_content = new List<Item>();
+            expected_content.Add(new(9, 15));
+            expected_content.Add(new(11, 15));
+            expected_content.Add(new(23, 28));
+            Assert.AreEqual(test_content, expected_content);
         }
         [Test]
         public void TestOrder()
