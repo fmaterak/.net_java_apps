@@ -33,6 +33,11 @@ namespace Knapsack
             Item other = (Item) obj;
             return Weight == other.Weight && Value == other.Value;
         }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 
     public class Program
