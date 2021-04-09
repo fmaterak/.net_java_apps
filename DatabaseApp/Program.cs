@@ -95,12 +95,12 @@ namespace CurrencyApp
             List<RequestedAction> req_actions = new();
 
             try {
-                while (index < args.Length)  // TODO: out of index range
+                while (index < args.Length)
                 {
                     if (args[index] == "show" && args[index+1] == "it") {
                         if (req_actions.Count() == 0 || req_actions.Last().Type != RequestedAction.RAType.FETCH) {
                             throw new ArgumentException(String.Format(
-                                "'it' must reference arguments of previous fetch (in 'show', arg #{0})", index + 1));
+                                "'it' must reference arguments of previous fetch (in 'show', arg #{0})", index + 2));
                         }
 
                         req_actions.Add(new(RequestedAction.RAType.SHOW, req_actions.Last().Start, req_actions.Last().End));
@@ -110,7 +110,7 @@ namespace CurrencyApp
                         DateTime startDate;
                         DateTime? endDate = null;
 
-                        // Parse first arg, which is required
+                        // Parse first date arg, which is required
                         try {
                             startDate = DateTime.Parse(args[index+1]);
                         }
@@ -120,7 +120,7 @@ namespace CurrencyApp
                                 args[index+1], args[index], index + 2));
                         }
 
-                        // Parse second arg, which is optional
+                        // Parse second date arg, which is optional
                         if (index + 2 < args.Length) {
                             try {
                                 endDate = DateTime.Parse(args[index+2]);
