@@ -59,8 +59,20 @@ namespace CurrencyApp
 
         public RequestedAction(RAType type, DateTime start, DateTime? end = null) {
             Type = type;
-            Start = start;
-            End = end;
+            Start = start.Date;
+            if (end == null) {
+                End = null;
+            } else {
+                End = ((DateTime) end).Date;
+                if (End < Start) {
+                    throw new ArgumentException("end date is smaller than start date");
+                }
+                else if (Type == RAType.FETCH && (End - Start).Value.Days + 1 > Program.MAX_DAYS_FETCH) {
+                    throw new ArgumentException(String.Format(
+                        "too big number of days to fetch, max is {0}",
+                        Program.MAX_DAYS_FETCH));
+                }
+            }
         }
 
         public override String ToString()
@@ -76,6 +88,7 @@ namespace CurrencyApp
 
     public class Program
     {
+        public static readonly int MAX_DAYS_FETCH = 10;
         public static List<RequestedAction> ParseArgs(string[] args)
         {
             int index = 0;
@@ -116,7 +129,12 @@ namespace CurrencyApp
                         }
 
                         var req_type = (args[index] == "fetch") ? RequestedAction.RAType.FETCH : RequestedAction.RAType.SHOW;
-                        req_actions.Add(new(req_type, startDate, endDate));
+                        try {
+                            req_actions.Add(new(req_type, startDate, endDate));
+                        }
+                        catch (ArgumentException e) {
+                            throw new ArgumentException(String.Format("{0} (in '{1}', arg#{2})", e.Message, args[index], index + 1));
+                        }
                         index += 2 + (endDate != null ? 1 : 0);
                     }
                     else {
