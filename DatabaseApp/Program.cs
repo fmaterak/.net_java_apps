@@ -19,7 +19,6 @@ namespace CurrencyApp
         public float EUR { get; set; }
         public float GBP { get; set; }
         public float CHF { get; set; }
-
     }
 
     public class ServerResponse
