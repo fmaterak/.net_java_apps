@@ -145,6 +145,19 @@ namespace CurrencyApp
         public static readonly String BASE_CURRENCY = "USD";
         public static readonly int MAX_DAYS_FETCH = 10;
 
+        public static void PrintHelp()
+        {
+            Console.WriteLine("usage: program {{instruction}}");
+            Console.WriteLine("instruction is one of:");
+            Console.WriteLine("    help             -- display this help and exit");
+            Console.WriteLine("    fetch date       -- fetch rates for given date");
+            Console.WriteLine("    fetch start end  -- fetch rates for dates between start and end (both inclusive)");
+            Console.WriteLine("    show date        -- show stored rates for given date");
+            Console.WriteLine("    show start end   -- show stored rates dates between start and end (both inclusive)");
+            Console.WriteLine("    show it          -- show previously fetched rates");
+            Console.WriteLine("    show all         -- show all stored rates");
+        }
+
         public static ICollection<RequestedAction> ParseArgs(string[] args)
         {
             int index = 0;
@@ -153,7 +166,11 @@ namespace CurrencyApp
             try {
                 while (index < args.Length)
                 {
-                    if (args[index] == "show" && args[index+1] == "it") {
+                    if (args[index] == "help") {
+                        PrintHelp();
+                        return null;
+                    }
+                    else if (args[index] == "show" && args[index+1] == "it") {
                         if (req_actions.Count() == 0 || req_actions.Last().Type != RequestedAction.RAType.FETCH) {
                             throw new ArgumentException(String.Format(
                                 "'it' must reference arguments of previous fetch (in 'show', arg #{0})", index + 2));
@@ -223,7 +240,7 @@ namespace CurrencyApp
             }
         }
 
-        public static RatesRecord GetRatesFromHistory(RatesHistory context, DateTime date)
+        public static RatesRecord GetRatesRecordFromHistory(RatesHistory context, DateTime date)
         {
             try {
                 return context.RatesRecords.Where(r => r.Date == date.Date).First();
@@ -237,7 +254,7 @@ namespace CurrencyApp
         {
             if (action.Type == RequestedAction.RAType.FETCH) {
                 foreach (var date in action.Dates()) {
-                    if (GetRatesFromHistory(context, date) == null) {
+                    if (GetRatesRecordFromHistory(context, date) == null) {
                         var resp = Fetch(date);
                         context.RatesRecords.Add(RatesRecord.FromRates(date, resp.Rates));
                     }
@@ -246,7 +263,7 @@ namespace CurrencyApp
             }
             else if (action.Type == RequestedAction.RAType.SHOW) {
                 foreach (var date in action.Dates()) {
-                    var rates = GetRatesFromHistory(context, date);
+                    var rates = GetRatesRecordFromHistory(context, date);
                     if (rates == null) {
                         Console.WriteLine("{0}: no data", date.ToString("d"));
                     } else {
@@ -272,6 +289,13 @@ namespace CurrencyApp
             catch (ArgumentException e) {
                 Console.WriteLine(e.Message);
                 return 1;
+            }
+
+            if (req_actions == null) {
+                return 1;
+            }
+            else if (req_actions.Count == 0) {
+                Console.WriteLine("Nothing to do. See help with 'help' option.");
             }
 
             var context = new RatesHistory();
