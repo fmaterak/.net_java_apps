@@ -55,6 +55,13 @@ namespace CurrencyApp
 
             return rec;
         }
+
+        public override String ToString()
+        {
+            var strings = typeof(Rates).GetProperties().Select(p =>
+                String.Format("{0}/{1} = {2}", p.Name, Program.BASE_CURRENCY, p.GetValue(this)));
+            return String.Format("{0}: {1}", Date.ToString("d"), String.Join(",\t", strings));
+        }
     }
 
     public class RatesHistory : DbContext
@@ -73,13 +80,15 @@ namespace CurrencyApp
         {
             FETCH,
             SHOW,
+            SHOW_ALL,
         }
 
         public RAType Type { get; }
         public DateTime Start { get; }
         public DateTime? End { get; }
 
-        public RequestedAction(RAType type, DateTime start, DateTime? end = null) {
+        public RequestedAction(RAType type, DateTime start, DateTime? end = null)
+        {
             Type = type;
             Start = start.Date;
             if (end == null) {
@@ -97,6 +106,11 @@ namespace CurrencyApp
             }
         }
 
+        public static RequestedAction ActionShowAll()
+        {
+            return new(RAType.SHOW_ALL, DateTime.Today);  // use dummy date
+        }
+
         public IEnumerable<DateTime> Dates()
         {
             if (End == null) {
@@ -111,7 +125,13 @@ namespace CurrencyApp
 
         public override String ToString()
         {
-            var type = Type == RAType.FETCH ? "FETCH" : "SHOW";
+            String type = "UNKNOWN_TYPE";
+            switch (Type) {
+                case RAType.FETCH: type = "FETCH"; break;
+                case RAType.SHOW: type = "SHOW"; break;
+                case RAType.SHOW_ALL: type = "SHOW_ALL"; break;
+            }
+
             if (End == null) {
                 return String.Format("RequestedAction({0}, {1})", type, Start.ToString("d"));
             } else {
@@ -122,6 +142,7 @@ namespace CurrencyApp
 
     public class Program
     {
+        public static readonly String BASE_CURRENCY = "USD";
         public static readonly int MAX_DAYS_FETCH = 10;
 
         public static ICollection<RequestedAction> ParseArgs(string[] args)
@@ -139,6 +160,10 @@ namespace CurrencyApp
                         }
 
                         req_actions.Add(new(RequestedAction.RAType.SHOW, req_actions.Last().Start, req_actions.Last().End));
+                        index += 2;
+                    }
+                    else if (args[index] == "show" && args[index+1] == "all") {
+                        req_actions.Add(RequestedAction.ActionShowAll());
                         index += 2;
                     }
                     else if (args[index] == "fetch" || args[index] == "show") {
@@ -189,8 +214,8 @@ namespace CurrencyApp
             // Get currencies to fetch from Rates' declared properties and join with URL-quoted commas
             var symbols = String.Join("%2C", typeof(Rates).GetProperties().Select(p => p.Name));
             var url = String.Format(
-                "https://openexchangerates.org/api/historical/{0}.json?app_id=dc18a6709e084d609d1efa99b2d6ad68&symbols={1}",
-                date.ToString("yyyy-MM-dd"), symbols);
+                "https://openexchangerates.org/api/historical/{0}.json?app_id=dc18a6709e084d609d1efa99b2d6ad68&symbols={1}&base={2}",
+                date.ToString("yyyy-MM-dd"), symbols, BASE_CURRENCY);
             using (WebClient web = new WebClient())
             {
                 var response = web.DownloadString(url);
@@ -198,7 +223,7 @@ namespace CurrencyApp
             }
         }
 
-        public static Rates GetRatesFromHistory(RatesHistory context, DateTime date)
+        public static RatesRecord GetRatesFromHistory(RatesHistory context, DateTime date)
         {
             try {
                 return context.RatesRecords.Where(r => r.Date == date.Date).First();
@@ -218,15 +243,20 @@ namespace CurrencyApp
                     }
                 }
                 context.SaveChanges();
-            } else {
+            }
+            else if (action.Type == RequestedAction.RAType.SHOW) {
                 foreach (var date in action.Dates()) {
                     var rates = GetRatesFromHistory(context, date);
                     if (rates == null) {
                         Console.WriteLine("{0}: no data", date.ToString("d"));
                     } else {
-                        var strings = typeof(Rates).GetProperties().Select(p => String.Format("{0}: {1}", p.Name, p.GetValue(rates)));
-                        Console.WriteLine("{0}: {1}", date.ToString("d"), String.Join(",\t", strings));
+                        Console.WriteLine(rates);
                     }
+                }
+            }
+            else if (action.Type == RequestedAction.RAType.SHOW_ALL) {
+                foreach (var rates in context.RatesRecords.OrderBy(rr => rr.Date)) {
+                    Console.WriteLine(rates);
                 }
             }
         }
