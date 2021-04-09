@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Net;
-using System.IO;
-using System.Data;
-using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
+using System.Globalization;
+using System.Linq;
+using System.Net;
+
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -278,7 +278,7 @@ namespace CurrencyApp
             context.Database.EnsureCreated();
 
             foreach (var action in req_actions) {
-                Console.WriteLine(action);
+                // Console.WriteLine(action);
                 Act(action, context);
             }
 
