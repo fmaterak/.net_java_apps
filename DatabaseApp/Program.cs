@@ -5,46 +5,68 @@ using System.Data;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 
 namespace CurrencyApp
 {
+    // JSON API stuff
     public class Rates
     {
-        public float PLN;
-        public float EUR;
-        public float GBP;
-        public float CHF;
+        public float PLN { get; set; }
+        public float EUR { get; set; }
+        public float GBP { get; set; }
+        public float CHF { get; set; }
 
     }
-    public class Base
-    {
-        public float USD;
-    }
-    public class Timestamp
-    {
-        public string timestamp;
-    }
-    public class DownloadRates
+
+    public class ServerResponse
     {
         public string Base { get; set; }
 
-        public string Timestamp { get; set; }
+        public int Timestamp { get; set; }
 
         public Rates Rates { get; set; }
+    }
 
-        public string getRates()
+    // Database-related stuff
+    public class RatesRecord : Rates
+    {
+        [Key]
+        public DateTime Date { get; set; }
+
+        public static RatesRecord FromRates(DateTime date, Rates r)
         {
-            using (WebClient web = new WebClient())
-            {
-                string url = string.Format("https://openexchangerates.org/api/latest.json?app_id=dc18a6709e084d609d1efa99b2d6ad68");
-                var json = web.DownloadString(url);
-                return json;
+            if (r == null) {
+                throw new ArgumentNullException("r");
             }
+
+            RatesRecord rec = new();
+            rec.Date = date.Date;
+
+            // Copy properties from r
+            foreach (var prop in typeof(Rates).GetProperties()) {
+                var value = prop.GetValue(r);
+                var myprop = rec.GetType().GetProperty(prop.Name);
+                myprop.SetValue(rec, value, null);
+            }
+
+            return rec;
         }
     }
 
+    public class RatesHistory : DbContext
+    {
+        public virtual DbSet<RatesRecord> RatesRecords { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+            optionsBuilder.UseSqlite("Filename=./rates.sqlite");
+        }
+    }
+
+    // App-related stuff
     public class RequestedAction
     {
         public enum RAType
@@ -53,9 +75,9 @@ namespace CurrencyApp
             SHOW,
         }
 
-        public readonly RAType Type;
-        public readonly DateTime Start;
-        public readonly DateTime? End;
+        public RAType Type { get; }
+        public DateTime Start { get; }
+        public DateTime? End { get; }
 
         public RequestedAction(RAType type, DateTime start, DateTime? end = null) {
             Type = type;
@@ -75,6 +97,18 @@ namespace CurrencyApp
             }
         }
 
+        public IEnumerable<DateTime> Dates()
+        {
+            if (End == null) {
+                yield return Start;
+                yield break;
+            }
+
+            for (var day = Start; day <= End; day = day.AddDays(1)) {
+                yield return day;
+            }
+        }
+
         public override String ToString()
         {
             var type = Type == RAType.FETCH ? "FETCH" : "SHOW";
@@ -89,7 +123,8 @@ namespace CurrencyApp
     public class Program
     {
         public static readonly int MAX_DAYS_FETCH = 10;
-        public static List<RequestedAction> ParseArgs(string[] args)
+
+        public static ICollection<RequestedAction> ParseArgs(string[] args)
         {
             int index = 0;
             List<RequestedAction> req_actions = new();
@@ -149,34 +184,75 @@ namespace CurrencyApp
             return req_actions;
         }
 
+        public static ServerResponse Fetch(DateTime date)
+        {
+            // Get currencies to fetch from Rates' declared properties and join with URL-quoted commas
+            var symbols = String.Join("%2C", typeof(Rates).GetProperties().Select(p => p.Name));
+            var url = String.Format(
+                "https://openexchangerates.org/api/historical/{0}.json?app_id=dc18a6709e084d609d1efa99b2d6ad68&symbols={1}",
+                date.ToString("yyyy-MM-dd"), symbols);
+            using (WebClient web = new WebClient())
+            {
+                var response = web.DownloadString(url);
+                return JsonConvert.DeserializeObject<ServerResponse>(response);
+            }
+        }
+
+        public static Rates GetRatesFromHistory(RatesHistory context, DateTime date)
+        {
+            try {
+                return context.RatesRecords.Where(r => r.Date == date.Date).First();
+            }
+            catch (System.InvalidOperationException) {
+                return null;
+            }
+        }
+
+        public static void Act(RequestedAction action, RatesHistory context)
+        {
+            if (action.Type == RequestedAction.RAType.FETCH) {
+                foreach (var date in action.Dates()) {
+                    if (GetRatesFromHistory(context, date) == null) {
+                        var resp = Fetch(date);
+                        context.RatesRecords.Add(RatesRecord.FromRates(date, resp.Rates));
+                    }
+                }
+                context.SaveChanges();
+            } else {
+                foreach (var date in action.Dates()) {
+                    var rates = GetRatesFromHistory(context, date);
+                    if (rates == null) {
+                        Console.WriteLine("{0}: no data", date.ToString("d"));
+                    } else {
+                        var strings = typeof(Rates).GetProperties().Select(p => String.Format("{0}: {1}", p.Name, p.GetValue(rates)));
+                        Console.WriteLine("{0}: {1}", date.ToString("d"), String.Join(",\t", strings));
+                    }
+                }
+            }
+        }
+
         public static int Main(string[] args)
         {
             CultureInfo.CurrentCulture = new CultureInfo("pl-PL", true);
+            ICollection<RequestedAction> req_actions;
+
             try {
-                var req_actions = ParseArgs(args);
+                req_actions = ParseArgs(args);
             }
             catch (ArgumentException e) {
                 Console.WriteLine(e.Message);
                 return 1;
             }
-            foreach (var ra in ParseArgs(args)) {
-                Console.WriteLine(ra);
+
+            var context = new RatesHistory();
+            context.Database.EnsureCreated();
+
+            foreach (var action in req_actions) {
+                Console.WriteLine(action);
+                Act(action, context);
             }
 
             return 0;
-        }
-
-        public static void NotMain(string[] args)
-        {
-            DownloadRates myRates = new DownloadRates();
-            DownloadRates deserializedProduct = JsonConvert.DeserializeObject<DownloadRates>(myRates.getRates());
-            Console.WriteLine("Baza: " + deserializedProduct.Base);
-            Console.WriteLine("Znacznik czasu: " + deserializedProduct.Timestamp);
-            Console.WriteLine("USD / PLN: " + deserializedProduct.Rates.PLN);
-            Console.WriteLine("USD / EUR: " + deserializedProduct.Rates.EUR);
-            Console.WriteLine("USD / GBP: " + deserializedProduct.Rates.GBP);
-            Console.WriteLine("USD / CHF: " + deserializedProduct.Rates.CHF);
-
         }
     }
 }
