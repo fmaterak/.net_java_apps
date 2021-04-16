@@ -5,6 +5,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Threading;
 
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -252,12 +253,25 @@ namespace CurrencyApp
         public static void Act(RequestedAction action, RatesHistory context)
         {
             if (action.Type == RequestedAction.RAType.FETCH) {
-                foreach (var date in action.Dates()) {
+                var dates = action.Dates().ToList();
+                var threads = new List<Thread>(dates.Count);
+
+                foreach (var date in dates) {
                     if (GetRatesRecordFromHistory(context, date) == null) {
-                        var resp = Fetch(date);
-                        context.RatesRecords.Add(RatesRecord.FromRates(date, resp.Rates));
+                        var thread = new Thread(delegate() {
+                            Console.WriteLine("Fetching data for {0}", date);
+                            var resp = Fetch(date);
+                            context.RatesRecords.Add(RatesRecord.FromRates(date, resp.Rates));
+                        });
+                        threads.Add(thread);
+                        thread.Start();
                     }
                 }
+
+                foreach (var thread in threads) {
+                    thread.Join();
+                }
+
                 context.SaveChanges();
             }
             else if (action.Type == RequestedAction.RAType.SHOW) {
