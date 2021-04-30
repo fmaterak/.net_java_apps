@@ -1,0 +1,36 @@
+@page
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json
+@using WebApp
+@model WebApplication1.Pages.Index1Model
+@{ ViewData["Title"] = "Przelicznik walut do dolara (PLN, EUR, GBP, CHF)";
+    if (HttpMethods.IsPost(Request.Method))
+    {
+        string Data = Request.Form["Data"];
+        DownloadRates currencygetter = new DownloadRates();
+        DownloadRates deserializedproduct = JsonConvert.DeserializeObject<DownloadRates>(currencygetter.getRates(Data));
+<text>
+    USD / PLN:  @deserializedproduct.Rates.PLN
+    <br />
+    USD / EUR:  @deserializedproduct.Rates.EUR
+    <br />
+    USD / GBP:  @deserializedproduct.Rates.GBP
+    <br />
+    USD / CHF:  @deserializedproduct.Rates.CHF
+    <br />
+</text> } }
+<h1>@ViewData["Title"]</h1>
+<p>
+    <form method="post">
+        <fieldset>
+            <legend>Podaj datę dla której chcesz wyświetlić kursy walut</legend>
+            <div>
+                <label for="Data">Data:</label>
+                <input type="text" name="Data" value="" />
+            </div>
+            <label>&nbsp;</label>
+            <input type="submit" value="Submit" class="submit" />
+            </div>
+        </fieldset>
+    </form>
+</p>
