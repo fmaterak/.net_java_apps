@@ -1,7 +1,4 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.SwingUtilities;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -10,6 +7,8 @@ class KnapsackMain {
     public static void main(String[] args) {
         var items = randomizeItems(8, 12345, 1, 29, 1, 29);
         var solution = solve(15, items);
+        AppWindow window = new AppWindow();
+        window.zbudujGUI();
         for (var item: solution) {
             System.out.println(item.toString());
         }
