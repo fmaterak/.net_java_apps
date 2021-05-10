@@ -8,7 +8,7 @@ class KnapsackMain {
         var items = randomizeItems(8, 12345, 1, 29, 1, 29);
         var solution = solve(15, items);
         AppWindow window = new AppWindow();
-        window.zbudujGUI();
+        window.buildGUI();
         for (var item: solution) {
             System.out.println(item.toString());
         }
