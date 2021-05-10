@@ -13,6 +13,8 @@ public class AppWindow implements ActionListener {
     JTextField tf1;
 
     int seed =12345;
+    int sumWeight;
+    int sumValue;
     Item[] items = KnapsackMain.randomizeItems(8, 12345, 1, 29, 1, 29);
     Item[] solution = KnapsackMain.solve(15, items);
 
@@ -22,20 +24,25 @@ public class AppWindow implements ActionListener {
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 200);
+        //Input text field
         tf1=new JTextField();
         tf1.setBounds(50,50,150,20);
         frame.add(tf1);
+        //Button
         countButton = new JButton();
         countButton.setText("Oblicz!");
         countButton.addActionListener(this);
+        //Panel
         JPanel jp = new JPanel();
         jp.setLayout(new GridLayout(1,3));
         jp.add(countButton);
         jp.add(tf1);
         JPanel jp2 = new JPanel();
         jp2.setLayout(new GridLayout(3,1));
-
+        //Text field
         textF = new JTextField("Podaj ziarno do wylosowania wartości i wag przedmiotów");
+        resultJL = new JLabel();
+        resultJL.setSize(400,20);
         resultJL = new JLabel();
         resultJL.setSize(400,20);
         jp2.add(textF);
@@ -51,12 +58,20 @@ public class AppWindow implements ActionListener {
         seed=Integer.parseInt(s1);
         if (action.getSource() == countButton) {
             resultJL.setText("");
+            //Making solution
             items = KnapsackMain.randomizeItems(8, seed, 1, solve.b.getValue(), 1, solve.c.getValue());
             solution = KnapsackMain.solve(15, items);
+
+            for (var item : solution) {
+                sumWeight += item.getWeight();
+                sumValue += item.getValue();
+            }
+            //Printing solution
             for (var item : solution) {
                 this.resultJL.setText("<html><center>" + resultJL.getText() + item.toString() + "<br>");
             }
-            
+                this.resultJL.setText(this.resultJL.getText()+"<html><center>"+"Sumaryczna waga przedmiotów:"+ sumWeight + "<br>"+
+                        " Sumaryczna wartość przedmiotów:"+ sumValue + "<br>");
         }
         else
             System.out.println("Ups");

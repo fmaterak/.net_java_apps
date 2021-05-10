@@ -5,18 +5,10 @@ import java.util.stream.IntStream;
 
 class KnapsackMain {
     public static void main(String[] args) {
-        var items = randomizeItems(8, 12345, 1, 29, 1, 29);
-        var solution = solve(15, items);
         AppWindow window = new AppWindow();
         window.buildGUI();
-        for (var item: solution) {
-            System.out.println(item.toString());
-        }
     }
 
-    // Możesz dodać slidery dla ustawiania max_w i max_v,
-    // z tym na pewno dostaniemy 5.0
-    // Wcześniej mieliśmy zakres 1-29 dla obu wartości
     public static Item[] randomizeItems(int num_items, long seed, int min_w, int max_w, int min_v, int max_v) {
         var rng = new RandomNumberGenerator(seed);
 
