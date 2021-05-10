@@ -37,6 +37,7 @@ public class AppWindow implements ActionListener{
 
     public void actionPerformed(ActionEvent akcja) {
         if (akcja.getSource() == countButton){
+            resultJL.setText("");
             for (var item: solution) {
                 this.resultJL.setText("<html><center>"+ resultJL.getText() + item.toString() + "<br>");
             }
