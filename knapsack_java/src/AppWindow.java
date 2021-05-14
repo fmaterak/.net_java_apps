@@ -72,6 +72,8 @@ public class AppWindow implements ActionListener {
             }
                 this.resultJL.setText(this.resultJL.getText()+"<html><center>"+"Sumaryczna waga przedmiotów:"+ sumWeight + "<br>"+
                         " Sumaryczna wartość przedmiotów:"+ sumValue + "<br>");
+            sumValue = 0;
+            sumWeight = 0;
         }
         else
             System.out.println("Ups");
